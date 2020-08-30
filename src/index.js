@@ -6,7 +6,7 @@ function World() {
   const [robots, setRobots] = useState([]);
 
   const addRobot = () => {
-    setRobots((robots) => [
+    setRobots(robots => [
       ...robots,
       {
         id: robots.length,
@@ -15,61 +15,62 @@ function World() {
     ]);
   };
 
-  console.log(robots);
+  const moveRobot = (id, getLocation) =>
+    setRobots(robots =>
+      robots.map(robot => {
+        if (robot.id !== id) {
+          return robot;
+        }
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setRobots((robots) =>
-        robots.reduce((acc, robot) => {
-          const step = {
-            x: randomBetween(-10, 10),
-            y: randomBetween(-10, 10)
-          };
+        const location = getLocation();
 
-          const location = {
-            x: robot.location.x + step.x,
-            y: robot.location.y + step.y
-          };
-
-          const stopped = !shouldMove(location, acc);
-
-          if (stopped) return acc;
-
-          return acc.map((item) =>
-            item.id !== robot.id ? item : { ...item, location }
-          );
-        }, robots)
-      );
-    }, 100);
-
-    return () => clearInterval(interval);
-  }, []);
+        return {
+          ...robot,
+          location: {
+            x: robot.location.x + location.x,
+            y: robot.location.y + location.y
+          }
+        };
+      })
+    );
 
   return (
     <>
-      <div style={{ ...surface, border: "1px solid #ddd" }}>
-        {robots.map((robot) => (
-          <Robot key={robot.id} {...robot} />
-        ))}
-      </div>
-      <br />
-      <button onClick={addRobot}>Add robot</button>
+      <button
+        style={{ position: "absolute", top: 10, left: 10 }}
+        onClick={addRobot}
+      >
+        Add robot
+      </button>
+      {robots.map(robot => (
+        <div
+          style={{
+            position: "absolute",
+            transform: `translate(${robot.location.x}px, ${robot.location.y}px)`,
+            transition: "translate .3s"
+          }}
+        >
+          <Robot
+            key={robot.id}
+            onMove={getLocation => moveRobot(robot.id, getLocation)}
+          />
+        </div>
+      ))}
     </>
   );
 }
 
-function Robot({ location }) {
-  return (
-    <div
-      style={{
-        position: "absolute",
-        transform: `translate(${location.x}px, ${location.y}px)`,
-        transition: "translate .3s"
-      }}
-    >
-      <img src={icon} alt="" />
-    </div>
-  );
+function Robot({ onMove }) {
+  useEffect(() => {
+    const interval = setInterval(() => {
+      onMove(() => ({ x: randomBetween(-10, 10), y: randomBetween(-10, 10) }));
+    }, 100);
+
+    return () => clearInterval(interval);
+    // TODO: onMove should be a dependency, but if move is changing - interval is cleared which is not desirable
+  }, []);
+
+  return <img src={icon} alt="" />;
 }
 
 const shouldMove = (location, robots) => {
@@ -89,8 +90,8 @@ const isClose = (a, b) => Math.abs(a - b) < 10;
 
 const randomLocation = () => {
   return {
-    x: randomBetween(0, surface.width),
-    y: randomBetween(0, surface.height)
+    x: randomBetween(0, window.innerWidth - ROBOT_SIZE),
+    y: randomBetween(0, window.innerHeight - ROBOT_SIZE)
   };
 };
 
@@ -98,10 +99,6 @@ const randomBetween = (min, max) => {
   return Math.round(Math.random() * (max - min) + min);
 };
 
-const surface = {
-  width: 800,
-  height: 1000
-};
-
+const ROBOT_SIZE = 32;
 
 ReactDOM.render(<World />, document.getElementById("root"));
