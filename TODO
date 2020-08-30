@@ -1,0 +1,3 @@
+Once robot is added on a surface it should be moving chaotically. When it's getting close to another robot they should move together. In the finall end all amount of robots on a surface should be gathered in one big swarm.
+
+- Implement the framework so the robots are able to act and interact with the world on its own.
